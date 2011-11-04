@@ -324,6 +324,26 @@ def print_gpx_trk(trk,file=sys.stdout,metric=True):
 				m*p[var_ele],km*p[var_dist],km*p[var_vel])))
 		f.write('\n')
 
+def print_org_table(trk,file=sys.stdout,metric=True):
+	f=file
+	if metric:
+		f.write('|time(ISO)| elevation(m)| distance(km)| velocity(km/h)|\n')
+		km,m=1.0,1.0
+	else:
+		f.write('|time(ISO)| elevation(ft)| distance(miles)| velocity(miles/h)|\n')
+		km,m=milesperkm,feetperm
+	if not trk:
+		return
+	for seg in trk:
+		if len(seg) == 0:
+			continue
+		for p in seg:
+			f.write('|%s| %f| %f| %f|\n'%\
+				((p[var_time].isoformat(),\
+				m*p[var_ele],km*p[var_dist],km*p[var_vel])))
+		f.write('\n')
+
+
 def gen_gnuplot_script(trk,x,y,file=sys.stdout,metric=True,savefig=None):
 	if metric:
 		ele_units,dist_units='m','km'
@@ -392,7 +412,7 @@ def main():
         parser = argparse.ArgumentParser(description = "gpx Tools.")
         parser.add_argument("--imperial", action="store_false", default="True", help="Output results in imperial rather then metric units.")
 
-        parser.add_argument("--output-format" , dest="output_format", default="table", choices=["googlechart", "gnuplot", "gprint", "table"])
+        parser.add_argument("--output-format" , dest="output_format", default="table", choices=["googlechart", "gnuplot", "gprint", "table", "orgtable"])
 
         parser.add_argument("--file", dest="trk", required=True, help="Input file name.")
         parser.add_argument("--image", dest="image", help="Output image file name.")
@@ -421,6 +441,10 @@ def main():
 
         if args.output_format == 'table':
             print_gpx_trk(trk,metric=metric)
+
+        elif args.output_format == 'orgtable':
+            print_org_table(trk,metric=metric)
+
 
         elif args.output_format == "gnuplot":
             plot_in_gnuplot(trk,x=xvar,y=yvar,metric=metric,savefig=args.image)
