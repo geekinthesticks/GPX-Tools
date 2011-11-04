@@ -56,6 +56,7 @@ from string import join
 from math import sqrt,sin,cos,asin,pi,ceil
 from os.path import basename
 from re import sub
+import argparse
 
 import logging
 #logging.basicConfig(level=logging.DEBUG,format='%(levelname)s: %(message)s')
@@ -374,7 +375,7 @@ def plot_in_gnuplot(trk,x,y,metric=True,savefig=None):
 			g=Gnuplot.Gnuplot()
 		g(script)
 	except: # python-gnuplot is not available or is broken
-		print 'gnuplot.py is not found'
+		print 'gnuplot.py not found'
 
 def print_gnuplot_script(trk,x,y,metric=True,savefig=None):
 	script=get_gnuplot_script(trk,x,y,metric,savefig)
@@ -388,71 +389,46 @@ def main():
 	imagefile=None
 	tzname=None
 	npoints=None
-	def print_see_usage():
-		print 'see usage: ' + basename(sys.argv[0]) + ' --help'
+        parser = argparse.ArgumentParser(description = "gpx Tools.")
+        parser.add_argument("--imperial", action="store_false", default="True", help="Output results in imperial rather then metric units.")
 
-	try: opts,args=getopt.getopt(sys.argv[1:],'hgEx:y:o:t:n:',
-			['help','gprint','google','table'])
-	except Exception, e:
-		print e
-		print_see_usage()
-		sys.exit(EXIT_EOPTION)
-	for o, a in opts:
-		if o in ['-h','--help']:
-			print __doc__
-			sys.exit(0)
-		if o == '-E':
-			metric=False
-		if o == '-g':
-			action='gnuplot'
-		if o == '--gprint':
-			action='printgnuplot'
-		if o == '--google':
-			action='googlechart'
-		if o == '--table':
-			action='printtable'
-		if o == '-x':
-			if var_names.has_key(a):
-				xvar=var_names[a]
-			else:
-				print 'unknown x variable'
-				print_see_usage()
-				sys.exit(EXIT_EOPTION)
-		if o == '-y':
-			if var_names.has_key(a):
-				yvar=var_names[a]
-			else:
-				print 'unknown y variable'
-				print_see_usage()
-				sys.exit(EXIT_EOPTION)
-		if o == '-o':
-			imagefile=a
-		if o == '-t':
-			if not globals().has_key('pytz'):
-				print 'pytz module is required to change timezone'
-				sys.exit(EXIT_EDEPENDENCY)
-			tzname=a
-		if o == '-n':
-			npoints=int(a)
-	if len(args) > 1:
-		print 'only one GPX file should be specified'
-		print_see_usage()
-		sys.exit(EXIT_EOPTION)
-	elif len(args) == 0:
-		print 'please provide a GPX file to process.'
-		print_see_usage()
-		sys.exit(EXIT_EOPTION)
+        parser.add_argument("--output-format" , dest="output_format", default="table", choices=["googlechart", "gnuplot", "gprint", "table"])
 
-	file=args[0]
-	trk=read_gpx_trk(file,tzname,npoints)
-	if action == 'gnuplot':
-		plot_in_gnuplot(trk,x=xvar,y=yvar,metric=metric,savefig=imagefile)
-	elif action == 'printgnuplot':
-		print_gnuplot_script(trk,x=xvar,y=yvar,metric=metric,savefig=imagefile)
-	elif action == 'printtable':
-		print_gpx_trk(trk,metric=metric)
-	elif action == 'googlechart':
-		print google_chart_url(trk,x=xvar,y=yvar,metric=metric)
+        parser.add_argument("--file", dest="trk", required=True, help="Input file name.")
+        parser.add_argument("--image", dest="image", help="Output image file name.")
+        parser.add_argument("--x-axis", dest="xvar", default="distance", choices=["time", "distance"], help="plot  time or distance (efault) on x-axis")
+        parser.add_argument("--y-axis", dest="yvar", default="elevation", choices=["elevation", "velocity"], help="plot  elevation (default) or velocity on y-axis")
+        parser.add_argument("--tzname", dest="tzone", help="Time zone e.g. Europe/London.")
+
+        args = parser.parse_args()
+        trk = read_gpx_trk(args.trk,tzname,npoints)
+
+        if (args.output_format):
+            metric = False
+
+        if args.xvar=="time":
+            xvar = var_time
+        else:
+            xvar = var_dist
+
+        if args.yvar == "velocity":
+            yvar = var_vel
+        else:
+            yvar = var_ele
+
+        if not(args.tzone == None):
+            tzname = args.tzone
+
+        if args.output_format == 'table':
+            print_gpx_trk(trk,metric=metric)
+
+        elif args.output_format == "gnuplot":
+            plot_in_gnuplot(trk,x=xvar,y=yvar,metric=metric,savefig=args.image)
+
+        elif args.output_format == "googlechart":
+            print google_chart_url(trk,x=xvar,y=yvar,metric=metric)
+        elif args.output_format == "gprint":
+            print_gnuplot_script(trk,x=xvar,y=yvar,metric=metric,savefig=imagefile)
 
 if __name__ == '__main__':
 	main()
