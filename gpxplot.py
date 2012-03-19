@@ -16,6 +16,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#    Modified by Ian Barton <ian@manor-farm.org> March 2012.
+#    Parse command line options using the argparse module.
+#    Add option to export in Emacs org-mode table format.
+
 """usage: gpxplot.py [action] [options] track.gpx
 
 Analyze GPS track and plot elevation and velocity profiles.
