@@ -52,6 +52,7 @@ Options:
 import sys
 import datetime
 import getopt
+import os
 from string import join
 from math import sqrt,sin,cos,asin,pi,ceil
 from os.path import basename
@@ -324,8 +325,9 @@ def print_gpx_trk(trk,file=sys.stdout,metric=True):
 				m*p[var_ele],km*p[var_dist],km*p[var_vel])))
 		f.write('\n')
 
-def print_org_table(trk,file=sys.stdout,metric=True):
+def print_org_table(trk,fname,file=sys.stdout,metric=True):
 	f=file
+        f.write("* %s\n" %  (os.path.basename(fname)))
 	if metric:
 		f.write('|time(ISO)| elevation(m)| distance(km)| velocity(km/h)|\n')
 		km,m=1.0,1.0
@@ -345,7 +347,7 @@ def print_org_table(trk,file=sys.stdout,metric=True):
 
 
 def gen_gnuplot_script(trk,x,y,file=sys.stdout,metric=True,savefig=None):
-	if metric:
+        if metric:
 		ele_units,dist_units='m','km'
 	else:
 		ele_units,dist_units='ft','miles'
@@ -402,7 +404,7 @@ def print_gnuplot_script(trk,x,y,metric=True,savefig=None):
 	print script
 
 def main():
-	metric=True
+	#metric=True
 	xvar=var_dist
 	action='printtable'
 	yvar=var_ele
@@ -410,7 +412,7 @@ def main():
 	tzname=None
 	npoints=None
         parser = argparse.ArgumentParser(description = "gpx Tools.")
-        parser.add_argument("--imperial", action="store_false", default="True", help="Output results in imperial rather then metric units.")
+        parser.add_argument("--imperial", dest="metric", action="store_false", default="True", help="Output results in imperial rather then metric units.")
 
         parser.add_argument("--output-format" , dest="output_format", default="table", choices=["googlechart", "gnuplot", "gprint", "table", "orgtable"])
 
@@ -423,8 +425,8 @@ def main():
         args = parser.parse_args()
         trk = read_gpx_trk(args.trk,tzname,npoints)
 
-        if (args.output_format):
-            metric = False
+        if (args.metric):
+            metric = True
 
         if args.xvar=="time":
             xvar = var_time
@@ -440,19 +442,19 @@ def main():
             tzname = args.tzone
 
         if args.output_format == 'table':
-            print_gpx_trk(trk,metric=metric)
+            print_gpx_trk(trk,metric=args.metric)
 
         elif args.output_format == 'orgtable':
-            print_org_table(trk,metric=metric)
+            print_org_table(trk,args.trk,metric=args.metric)
 
 
         elif args.output_format == "gnuplot":
-            plot_in_gnuplot(trk,x=xvar,y=yvar,metric=metric,savefig=args.image)
+            plot_in_gnuplot(trk,x=xvar,y=yvar,metric=args.metric,savefig=args.image)
 
         elif args.output_format == "googlechart":
-            print google_chart_url(trk,x=xvar,y=yvar,metric=metric)
+            print google_chart_url(trk,x=xvar,y=yvar,metric=args.metric)
         elif args.output_format == "gprint":
-            print_gnuplot_script(trk,x=xvar,y=yvar,metric=metric,savefig=imagefile)
+            print_gnuplot_script(trk,x=xvar,y=yvar,metric=args.metric,savefig=imagefile)
 
 if __name__ == '__main__':
 	main()
