@@ -147,8 +147,12 @@ def read_all_segments(trksegs,tzname=None,ns=GPX10,pttag='trkpt'):
         for pt in trkpts:
             lat=float(pt.attrib['lat'])
             lon=float(pt.attrib['lon'])
+            # get heart rate from extended tag
+            hrData = (pt.find(TRACKPOINT_NS + 'hr'))
 
-
+            # If the file has no heart rate data, just assign to zero.
+            if hrData is None:
+                hrData = '0'
 
             time=pt.findtext(ns+'time')
             #def prettify_time(time):
