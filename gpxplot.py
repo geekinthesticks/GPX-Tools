@@ -413,6 +413,11 @@ def gen_gnuplot_script(trk,x,y,file=sys.stdout,metric=True,savefig=None):
         file.write("set xlabel 'distance, %s'\n"%dist_units)
     if y == var_ele:
         file.write("set ylabel 'elevation, %s'\n"%ele_units)
+    elif y == var_hr:
+        file.write("set ylabel 'heart rate, %s'\n"%hr_units)
+    elif y == var_temp:
+        file.write("set ylabel 'temperature, %s'\n"%temp_units)
+
     else:
         file.write("set ylabel 'velocity, %s/h\n"%dist_units)
     if savefig:
