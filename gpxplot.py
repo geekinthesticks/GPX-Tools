@@ -74,7 +74,22 @@ except:
 
 GPX10='{http://www.topografix.com/GPX/1/0}'
 GPX11='{http://www.topografix.com/GPX/1/1}'
-dateformat='%Y-%m-%dT%H:%M:%SZ'
+GPXEXT= '{http://www.garmin.com/xmlschemas/TrackPointExtension/v1}'
+
+
+TOPOGRAFIX_NS = './/{http://www.topografix.com/GPX/1/1}'
+TRACKPOINT_NS = TOPOGRAFIX_NS + 'extensions/{http://www.garmin.com/xmlschemas/TrackPointExtension/v1}TrackPointExtension/{http://www.garmin.com/xmlschemas/TrackPointExtension/v1}'
+
+
+
+stdateformat='%Y-%m-%dT%H:%M:%S'
+# dateformat='%Y-%m-%dT%H:%M:%SZ'
+# dateformat = dateformat='%Y-%m-%dT%H:%M:%SZ'
+
+# Sportstracker uses a non standard date format.
+# 2014-07-09T16:24:20.74
+dateformat='%Y-%m-%dT%H:%M:%S'
+
 
 R=6371.0008 # Earth volumetric radius
 milesperkm=0.621371192
@@ -119,37 +134,48 @@ def distance(p1,p2):
 	return dist
 
 def read_all_segments(trksegs,tzname=None,ns=GPX10,pttag='trkpt'):
-	trk=[]
-	for seg in trksegs:
-		s=[]
-		prev_ele,prev_time=0.0,None
-		trkpts=seg.findall(ns+pttag)
-		for pt in trkpts:
-			lat=float(pt.attrib['lat'])
-			lon=float(pt.attrib['lon'])
-			time=pt.findtext(ns+'time')
-			def prettify_time(time):
-				time=sub(r'\.\d+Z$','Z',time)
-				time=strptime(time,dateformat)
-				if tzname:
-					time=time.replace(tzinfo=pytz.utc)
-					time=time.astimezone(pytz.timezone(tzname))
-				return time
-			if time:
-				prev_time=time
-				time=prettify_time(time)
-			elif prev_time: # timestamp is missing, use the prev point
-				time=prev_time
-				time=prettify_time(time)
-			ele=pt.findtext(ns+'ele')
-			if ele:
-				ele=float(ele)
-				prev_ele=ele
-			else:
-				ele=prev_ele # elevation data is missing, use the prev point
-			s.append([lat, lon, time, ele])
-		trk.append(s)
-	return trk
+
+    trk=[]
+    for seg in trksegs:
+        s=[]
+        prev_ele,prev_time=0.0,None
+        trkpts=seg.findall(ns+pttag)
+        for pt in trkpts:
+            lat=float(pt.attrib['lat'])
+            lon=float(pt.attrib['lon'])
+
+
+
+            time=pt.findtext(ns+'time')
+            #def prettify_time(time):
+            #   time=sub(r'\.\d+Z$','Z',time)
+
+            def prettify_time(time):
+                time=sub(r'\.\d+Z$','Z',time)
+                time=strptime(time,dateformat)
+
+
+                if tzname:
+                    time=time.replace(tzinfo=pytz.utc)
+                    time=time.astimezone(pytz.timezone(tzname))
+
+                return time
+
+            if time:
+                prev_time=time
+                time=prettify_time(time)
+            elif prev_time: # timestamp is missing, use the prev point
+                time=prev_time
+                time=prettify_time(time)
+            ele=pt.findtext(ns+'ele')
+            if ele:
+                ele=float(ele)
+                prev_ele=ele
+            else:
+                ele=prev_ele # elevation data is missing, use the prev point
+            s.append([lat, lon, time, ele])
+        trk.append(s)
+    return trk
 
 def reduce_points(trk,npoints=None):
 	count=sum([len(s) for s in trk])
@@ -169,79 +195,87 @@ def reduce_points(trk,npoints=None):
 	return newtrk
 
 def eval_dist_velocity(trk):
-	dist=0.0
-	newtrk=[]
-	for seg in trk:
-		if len(seg)>0:
-			newseg=[]
-			prev_lat,prev_lon,prev_time,prev_ele=None,None,None,None
-			for pt in seg:
-				lat,lon,time,ele=pt
-				if prev_lat and prev_lon:
-					delta=distance([lat,lon],[prev_lat,prev_lon])
-					if time and prev_time:
-						try:
-							vel=3600*delta/((time-prev_time).seconds)
-						except ZeroDivisionError:
-							vel=0.0 # probably the point lacked the timestamp
-					else:
-						vel=0.0
-				else: # new segment
-					delta=0.0
-					vel=0.0
-				dist=dist+delta
-				newseg.append([lat,lon,time,ele,dist,vel])
-				prev_lat,prev_lon,prev_time=lat,lon,time
-			newtrk.append(newseg)
-	return newtrk
+    dist=0.0
+    newtrk=[]
+    for seg in trk:
+        if len(seg)>0:
+            newseg=[]
+            prev_lat,prev_lon,prev_time,prev_ele=None,None,None,None
+            for pt in seg:
+                lat,lon,time,ele=pt
+                if prev_lat and prev_lon:
+                    delta=distance([lat,lon],[prev_lat,prev_lon])
+                    if time and prev_time:
+                        try:
+                            vel=3600*delta/((time-prev_time).seconds)
+                        except ZeroDivisionError:
+                            vel=0.0 # probably the point lacked the timestamp
+                    else:
+                        vel=0.0
+                else: # new segment
+                    delta=0.0
+                    vel=0.0
+                dist=dist+delta
+                newseg.append([lat,lon,time,ele,dist,vel])
+                prev_lat,prev_lon,prev_time=lat,lon,time
+            newtrk.append(newseg)
+    return newtrk
 
 def parse_gpx_data(gpxdata,tzname=None,npoints=None):
-	try:
-		import xml.etree.ElementTree as ET
-	except:
-		try:
-			import elementtree.ElementTree as ET
-		except:
-			try:
-				import cElementTree as ET
-			except:
-				try:
-					import lxml.etree as ET
-				except:
-					print 'this script needs ElementTree (Python>=2.5)'
-					sys.exit(EXIT_EDEPENDENCY)
+    try:
+        import xml.etree.ElementTree as ET
+    except:
+        try:
+            import elementtree.ElementTree as ET
+        except:
+            try:
+                import cElementTree as ET
+            except:
+                try:
+                    import lxml.etree as ET
+                except:
+                    print 'this script needs ElementTree (Python>=2.5)'
+                    sys.exit(EXIT_EDEPENDENCY)
 
-	def find_trksegs_or_route(etree, ns):
-		trksegs=etree.findall('.//'+ns+'trkseg')
-		if trksegs:
-			return trksegs, "trkpt"
-		else: # try to display route if track is missing
-			rte=etree.findall('.//'+ns+'rte')
-			return rte, "rtept"
+    def find_trksegs_or_route(etree, ns):
+        trksegs=etree.findall('.//'+ns+'trkseg')
+        if trksegs:
+            return trksegs, "trkpt"
+        else: # try to display route if track is missing
+            rte=etree.findall('.//'+ns+'rte')
+            return rte, "rtept"
 
-	# try GPX10 namespace first
-	etree=ET.XML(gpxdata)
-	trksegs,pttag=find_trksegs_or_route(etree, GPX10)
-	NS=GPX10
-	if not trksegs: # try GPX11 namespace otherwise
-		trksegs,pttag=find_trksegs_or_route(etree, GPX11)
-		NS=GPX11
-	if not trksegs: # try without any namespace
-		trksegs,pttag=find_trksegs_or_route(etree, "")
-		NS=""
-	trk=read_all_segments(trksegs,tzname=tzname,ns=NS,pttag=pttag)
-	trk=reduce_points(trk,npoints=npoints)
-	trk=eval_dist_velocity(trk)
-	return trk
+
+    # try GPX10 namespace first
+    etree=ET.XML(gpxdata)
+    #try:
+    #    etree = ET.XML(gpxdata)
+    #except ET.ParseError as v:
+    #    row, column = v.position
+    #    print ("error on row %d, column %d" % (row, column))
+
+
+    trksegs,pttag=find_trksegs_or_route(etree, GPX10)
+    NS=GPX10
+    if not trksegs: # try GPX11 namespace otherwise
+        trksegs,pttag=find_trksegs_or_route(etree, GPX11)
+        NS=GPX11
+    if not trksegs: # try without any namespace
+        trksegs,pttag=find_trksegs_or_route(etree, "")
+        NS=""
+    trk=read_all_segments(trksegs,tzname=tzname,ns=NS,pttag=pttag)
+    trk=reduce_points(trk,npoints=npoints)
+    trk=eval_dist_velocity(trk)
+    return trk
 
 def read_gpx_trk(filename,tzname,npoints):
-	if filename == "-":
-		gpx=sys.stdin.read()
-		debug("length(gpx) from stdin = %d" % len(gpx))
-	else:
-		gpx=open(filename).read()
-		debug("length(gpx) from file = %d" % len(gpx))
-	return parse_gpx_data(gpx,tzname,npoints)
+    if filename == "-":
+        gpx=sys.stdin.read()
+        debug("length(gpx) from stdin = %d" % len(gpx))
+    else:
+        gpx=open(filename).read()
+        debug("length(gpx) from file = %d" % len(gpx))
+    return parse_gpx_data(gpx,tzname,npoints)
 
 def google_ext_encode(i):
 	"""Google Charts' extended encoding,
@@ -330,59 +364,61 @@ def print_gpx_trk(trk,file=sys.stdout,metric=True):
 		f.write('\n')
 
 def print_org_table(trk,fname,file=sys.stdout,metric=True):
-	f=file
-        f.write("* %s\n" %  (os.path.basename(fname)))
-	if metric:
-		f.write('|time(ISO)| elevation(m)| distance(km)| velocity(km/h)|\n')
-		km,m=1.0,1.0
-	else:
-		f.write('|time(ISO)| elevation(ft)| distance(miles)| velocity(miles/h)|\n')
-		km,m=milesperkm,feetperm
-	if not trk:
-		return
-	for seg in trk:
-		if len(seg) == 0:
-			continue
-		for p in seg:
-			f.write('|%s| %f| %f| %f|\n'%\
-				((p[var_time].isoformat(),\
-				m*p[var_ele],km*p[var_dist],km*p[var_vel])))
-		f.write('\n')
+    f=file
+    f.write("* %s\n" %  (os.path.basename(fname)))
+    if metric:
+        f.write('|time(ISO)| elevation(m)| distance(km)| velocity(km/h)|\n')
+        km,m=1.0,1.0
+
+    else:
+        f.write('|time(ISO)| elevation(ft)| distance(miles)| velocity(miles/h)|heart rate(bpm)|\n')
+        km,m=milesperkm,feetperm
+
+    if not trk:
+        return
+    for seg in trk:
+        if len(seg) == 0:
+            continue
+        for p in seg:
+            f.write('|%s| %f| %f| %f|\n'%\
+                ((p[var_time].isoformat(),\
+                m*p[var_ele],km*p[var_dist],km*p[var_vel])))
+        f.write('\n')
 
 
 def gen_gnuplot_script(trk,x,y,file=sys.stdout,metric=True,savefig=None):
-        if metric:
-		ele_units,dist_units='m','km'
-	else:
-		ele_units,dist_units='ft','miles'
-	file.write("unset key\n")
-	if x == var_time:
-		file.write("""set xdata time
-		set timefmt '%Y-%m-%dT%H:%M:%S'
-		set xlabel 'time'\n""")
-	else:
-		file.write("set xlabel 'distance, %s'\n"%dist_units)
-	if y == var_ele:
-		file.write("set ylabel 'elevation, %s'\n"%ele_units)
-	else:
-		file.write("set ylabel 'velocity, %s/h\n"%dist_units)
-	if savefig:
-		import re
-		ext=re.sub(r'.*\.','',savefig.lower())
-		if ext == 'png':
-			file.write("set terminal png; set output '%s';\n"%(savefig))
-		elif ext in ['jpg','jpeg']:
-			file.write("set terminal jpeg; set output '%s';\n"%(savefig))
-		elif ext == 'eps':
-			file.write("set terminal post eps; set output '%s';\n"%(savefig))
-		elif ext == 'svg':
-			file.write("set terminal svg; set output '%s';\n"%(savefig))
-		else:
-			print 'unsupported file type: %s'%ext
-			sys.exit(EXIT_EFORMAT)
-	file.write("plot '-' u %d:%d w l\n"%(x-1,y-1,))
-	print_gpx_trk(trk,file=file,metric=metric)
-	file.write('e')
+    if metric:
+        ele_units,dist_units='m','km'
+    else:
+        ele_units,dist_units='ft','miles'
+    file.write("unset key\n")
+    if x == var_time:
+        file.write("""set xdata time
+        set timefmt '%Y-%m-%dT%H:%M:%S'
+        set xlabel 'time'\n""")
+    else:
+        file.write("set xlabel 'distance, %s'\n"%dist_units)
+    if y == var_ele:
+        file.write("set ylabel 'elevation, %s'\n"%ele_units)
+    else:
+        file.write("set ylabel 'velocity, %s/h\n"%dist_units)
+    if savefig:
+        import re
+        ext=re.sub(r'.*\.','',savefig.lower())
+        if ext == 'png':
+            file.write("set terminal png; set output '%s';\n"%(savefig))
+        elif ext in ['jpg','jpeg']:
+            file.write("set terminal jpeg; set output '%s';\n"%(savefig))
+        elif ext == 'eps':
+            file.write("set terminal post eps; set output '%s';\n"%(savefig))
+        elif ext == 'svg':
+            file.write("set terminal svg; set output '%s';\n"%(savefig))
+        else:
+            print 'unsupported file type: %s'%ext
+            sys.exit(EXIT_EFORMAT)
+    file.write("plot '-' u %d:%d w l\n"%(x-1,y-1,))
+    print_gpx_trk(trk,file=file,metric=metric)
+    file.write('e')
 
 def get_gnuplot_script(trk,x,y,metric,savefig):
 	import StringIO
@@ -427,7 +463,6 @@ def main():
         parser.add_argument("--tzname", dest="tzone", help="Time zone e.g. Europe/London.")
 
         args = parser.parse_args()
-        trk = read_gpx_trk(args.trk,tzname,npoints)
 
         if (args.metric):
             metric = True
@@ -442,8 +477,12 @@ def main():
         else:
             yvar = var_ele
 
+
         if not(args.tzone == None):
             tzname = args.tzone
+
+        trk = read_gpx_trk(args.trk,tzname,npoints)
+
 
         if args.output_format == 'table':
             print_gpx_trk(trk,metric=args.metric)
