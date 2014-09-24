@@ -186,7 +186,7 @@ def read_all_segments(trksegs,tzname=None,ns=GPX10,pttag='trkpt'):
                 prev_ele=ele
             else:
                 ele=prev_ele # elevation data is missing, use the prev point
-            s.append([lat, lon, time, ele])
+            s.append([lat, lon, time, int(hrData.text), tempData.text, ele])
         trk.append(s)
     return trk
 
