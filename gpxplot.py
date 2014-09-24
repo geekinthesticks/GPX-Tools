@@ -400,6 +400,8 @@ def print_org_table(trk,fname,file=sys.stdout,metric=True):
 
 
 def gen_gnuplot_script(trk,x,y,file=sys.stdout,metric=True,savefig=None):
+    hr_units = "bpm"
+    temp_units = "C"
     if metric:
         ele_units,dist_units='m','km'
     else:
