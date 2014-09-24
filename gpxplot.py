@@ -163,7 +163,8 @@ def read_all_segments(trksegs,tzname=None,ns=GPX10,pttag='trkpt'):
             #   time=sub(r'\.\d+Z$','Z',time)
 
             def prettify_time(time):
-                time=sub(r'\.\d+Z$','Z',time)
+                time=sub(r'\.\d+$','',time)
+                # time=sub(r'\.\d+Z$','Z',time)
                 time=strptime(time,dateformat)
 
 
