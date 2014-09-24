@@ -380,11 +380,11 @@ def print_org_table(trk,fname,file=sys.stdout,metric=True):
     f=file
     f.write("* %s\n" %  (os.path.basename(fname)))
     if metric:
-        f.write('|time(ISO)| elevation(m)| distance(km)| velocity(km/h)|\n')
+        f.write('|time(ISO)| elevation(m)| distance(km)| velocity(km/h)|heart rate (bpm| temperature|\n')
         km,m=1.0,1.0
 
     else:
-        f.write('|time(ISO)| elevation(ft)| distance(miles)| velocity(miles/h)|heart rate(bpm)|\n')
+        f.write('|time(ISO)| elevation(ft)| distance(miles)| velocity(miles/h)|heart rate(bpm)|temperature|\n')
         km,m=milesperkm,feetperm
 
     if not trk:
@@ -395,7 +395,7 @@ def print_org_table(trk,fname,file=sys.stdout,metric=True):
         for p in seg:
             f.write('|%s| %f| %f| %f|\n'%\
                 ((p[var_time].isoformat(),\
-                m*p[var_ele],km*p[var_dist],km*p[var_vel])))
+                  m*p[var_ele],km*p[var_dist],km*p[var_vel],p[var_hr],p[var_temp])))
         f.write('\n')
 
 
