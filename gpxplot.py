@@ -154,6 +154,10 @@ def read_all_segments(trksegs,tzname=None,ns=GPX10,pttag='trkpt'):
             if hrData is None:
                 hrData = '0'
 
+            tempData = (pt.find(TRACKPOINT_NS + 'atemp'))
+            if tempData is None:
+                tempData = '0'
+
             time=pt.findtext(ns+'time')
             #def prettify_time(time):
             #   time=sub(r'\.\d+Z$','Z',time)
