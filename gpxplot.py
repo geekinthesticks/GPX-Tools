@@ -101,6 +101,8 @@ var_time=2
 var_ele=3
 var_dist=4
 var_vel=5
+var_hr =6
+var_temp=7
 
 var_names={ 't': var_time,
 			'time': var_time,
