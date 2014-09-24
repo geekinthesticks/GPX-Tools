@@ -360,10 +360,10 @@ def google_chart_url(trk,x,y,metric=True):
 def print_gpx_trk(trk,file=sys.stdout,metric=True):
 	f=file
 	if metric:
-		f.write('# time(ISO) elevation(m) distance(km) velocity(km/h)\n')
+		f.write('# time(ISO) elevation(m) distance(km) velocity(km/h) heart rate(bpm) temperature\n')
 		km,m=1.0,1.0
 	else:
-		f.write('# time(ISO) elevation(ft) distance(miles) velocity(miles/h)\n')
+		f.write('# time(ISO) elevation(ft) distance(miles) velocity(miles/h) heart rate(bpm) temperature\n')
 		km,m=milesperkm,feetperm
 	if not trk:
 		return
@@ -371,9 +371,9 @@ def print_gpx_trk(trk,file=sys.stdout,metric=True):
 		if len(seg) == 0:
 			continue
 		for p in seg:
-			f.write('%s %f %f %f\n'%\
+			f.write('%s %f %f %f %d %d\n'%\
 				((p[var_time].isoformat(),\
-				m*p[var_ele],km*p[var_dist],km*p[var_vel])))
+				  m*p[var_ele],km*p[var_dist],km*p[var_vel],p[var_hr],p[var_temp])))
 		f.write('\n')
 
 def print_org_table(trk,fname,file=sys.stdout,metric=True):
