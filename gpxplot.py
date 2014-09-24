@@ -115,6 +115,10 @@ var_names={ 't': var_time,
 			'v': var_vel,
 			'vel': var_vel,
 			'velocity': var_vel,
+                        'hr': var_hr,
+                        'heartrate' : var_hr,
+                        'atemp' : var_temp,
+
 			}
 
 EXIT_EOPTION=1
