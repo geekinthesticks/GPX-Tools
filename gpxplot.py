@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # vim: set fileencoding=utf8 ts=4 sw=4 noexpandtab:
 
 # (c) Sergey Astanin <s.astanin@gmail.com> 2008
@@ -83,12 +83,12 @@ TRACKPOINT_NS = TOPOGRAFIX_NS + 'extensions/{http://www.garmin.com/xmlschemas/Tr
 
 
 stdateformat='%Y-%m-%dT%H:%M:%S'
-# dateformat='%Y-%m-%dT%H:%M:%SZ'
+dateformat='%Y-%m-%dT%H:%M:%SZ'
 # dateformat = dateformat='%Y-%m-%dT%H:%M:%SZ'
 
 # Sportstracker uses a non standard date format.
 # 2014-07-09T16:24:20.74
-dateformat='%Y-%m-%dT%H:%M:%S'
+#dateformat='%Y-%m-%dT%H:%M:%S'
 
 
 R=6371.0008 # Earth volumetric radius
@@ -188,7 +188,7 @@ def read_all_segments(trksegs,tzname=None,ns=GPX10,pttag='trkpt'):
                 prev_ele=ele
             else:
                 ele=prev_ele # elevation data is missing, use the prev point
-            s.append([lat, lon, time, int(hrData.text), tempData.text, ele])
+            s.append([lat, lon, time, ele, float(hrData.text), float(tempData.text)])
         trk.append(s)
     return trk
 
@@ -215,9 +215,9 @@ def eval_dist_velocity(trk):
     for seg in trk:
         if len(seg)>0:
             newseg=[]
-            prev_lat,prev_lon,prev_time,prev_ele=None,None,None,None
+            prev_lat,prev_lon,prev_time,prev_ele,prev_hr,prev_temp=None,None,None,None,None,None
             for pt in seg:
-                lat,lon,time,ele=pt
+                lat,lon,time,ele,hr,temp=pt
                 if prev_lat and prev_lon:
                     delta=distance([lat,lon],[prev_lat,prev_lon])
                     if time and prev_time:
@@ -231,8 +231,8 @@ def eval_dist_velocity(trk):
                     delta=0.0
                     vel=0.0
                 dist=dist+delta
-                newseg.append([lat,lon,time,ele,dist,vel])
-                prev_lat,prev_lon,prev_time=lat,lon,time
+                newseg.append([lat,lon,time,ele,dist,vel,hr,temp])
+                prev_lat,prev_lon,prev_time,prev_ele,prev_hr,prev_temp=lat,lon,time,ele,hr,temp
             newtrk.append(newseg)
     return newtrk
 
@@ -373,9 +373,10 @@ def print_gpx_trk(trk,file=sys.stdout,metric=True):
 		if len(seg) == 0:
 			continue
 		for p in seg:
-			f.write('%s %f %f %f %d %d\n'%\
-				((p[var_time].isoformat(),\
-				  m*p[var_ele],km*p[var_dist],km*p[var_vel],p[var_hr],p[var_temp])))
+                    f.write('%s %.1f %.1f %.1f %.1f %.1f\n'%\
+                    ((p[var_time].isoformat(),\
+                      m*p[var_ele],km*p[var_dist],km*p[var_vel],p[var_temp],p[var_hr])))
+
 		f.write('\n')
 
 def print_org_table(trk,fname,file=sys.stdout,metric=True):
